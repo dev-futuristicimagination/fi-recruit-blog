@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
     }
   } catch { /* persona取得失敗時はデフォルトで続行 */ }
 
-  // Generate
+  // Generate article body only (frontmatterはプログラム側で構築)
   const genAI = new GoogleGenerativeAI(geminiKey);
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
@@ -80,25 +80,48 @@ export async function GET(req: NextRequest) {
 - 大手企業の採用ブログっぽい建前は一切不要
 - 上のペルソナ情報に基づいた口調・価値観で書く
 
-【構成】2,000〜2,500文字
-- 共感できる書き出し（問いかけ・具体的なエピソード）
-- H2×3〜4本の本文
-- まとめ（カジュアル面談への誘い）
+【出力形式】
+- 最初の1行目に「TITLE:」で始まるタイトル（40〜60文字）
+- 2行目に「EXCERPT:」で始まる概要（100〜120文字）
+- 3行目以降に記事本文（2,000〜2,500文字）
+- 構成: 共感できる書き出し → H2×3〜4本 → まとめ（カジュアル面談への誘い）
+- コードブロックや---で囲まないこと`;
 
-【Front Matter（このまま出力）】
----
+  const result = await model.generateContent(prompt);
+  const rawText = result.response.text().trim()
+    .replace(/^```(?:markdown)?\n/, '').replace(/\n```$/, '');
+
+  // タイトルと概要をパース
+  const lines = rawText.split('\n');
+  let title = cfg.topic.slice(0, 60);
+  let excerpt = '';
+  let bodyStart = 0;
+
+  for (let i = 0; i < Math.min(5, lines.length); i++) {
+    if (lines[i].startsWith('TITLE:')) {
+      title = lines[i].replace('TITLE:', '').trim();
+      bodyStart = i + 1;
+    } else if (lines[i].startsWith('EXCERPT:')) {
+      excerpt = lines[i].replace('EXCERPT:', '').trim();
+      bodyStart = i + 1;
+    }
+  }
+
+  const body = lines.slice(bodyStart).join('\n').trim();
+  if (!excerpt) {
+    excerpt = body.replace(/^#+.+\n/gm, '').trim().slice(0, 120).replace(/\n/g, ' ');
+  }
+
+  // frontmatterをプログラム側で確実に構築（Gemini出力に依存しない）
+  const content = `---
 slug: "${slug}"
-title: "{40〜60文字のタイトル}"
-excerpt: "{100〜120文字の概要}"
+title: "${title}"
+excerpt: "${excerpt}"
 category: "${cfg.category}"
 publishedAt: "${today}"
 ---
 
-Front Matterから始めて、Markdown形式で出力してください。コードブロックで囲まないでください。`;
-
-  const result = await model.generateContent(prompt);
-  let content = result.response.text().trim()
-    .replace(/^```(?:markdown)?\n/, '').replace(/\n```$/, '');
+${body}`;
 
   // Save to GitHub
   const filename = `${slug}.md`;
