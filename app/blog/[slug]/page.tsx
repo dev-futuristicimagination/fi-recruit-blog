@@ -95,15 +95,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   const article = await fetchArticle(slug);
 
   if (!article) {
-    // デバッグ: 404の代わりに情報を表示（本番は notFound() に戻す）
-    return (
-      <div style={{ padding: 40, fontFamily: 'monospace' }}>
-        <h2>Article not found (debug)</h2>
-        <p>slug: {slug}</p>
-        <p>slug length: {slug.length}</p>
-        <p>encoded: {encodeURIComponent(slug)}</p>
-      </div>
-    );
+    notFound();
   }
 
   return (
