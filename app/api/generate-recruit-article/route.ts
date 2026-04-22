@@ -47,7 +47,10 @@ const TOPICS = [
 ];
 
 export async function GET(req: NextRequest) {
-  // AUTH_TEMP_DISABLED for bulk generation
+  const secret = process.env.CRON_SECRET;
+  if (secret && req.headers.get('authorization') !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   const geminiKey = process.env.GEMINI_API_KEY;
   if (!geminiKey) return NextResponse.json({ error: 'GEMINI_API_KEY not set' }, { status: 500 });
