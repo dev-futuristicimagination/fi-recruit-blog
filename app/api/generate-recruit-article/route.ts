@@ -15,7 +15,7 @@ const TOPICS = [
   { topic: 'FIが目指す「1人で1億円」の完全自動化ビジネスモデル', category: 'ビジョン' },
   { topic: 'Next.js + Vercel + GitHub APIで作る無人メディアの全貌', category: '技術ブログ' },
   { topic: 'AIに仕事を奪われる前に、AIを使う側になる方法', category: 'キャリア' },
-  { topic: 'SESからAIスタートアップへ。佐藤卓也の転職エピソード', category: '代表ストーリー' },
+  { topic: 'SESからAIスタートアップへ。佐藤琢也の転職エピソード', category: '代表ストーリー' },
   { topic: '副業からフリーランス、そして起業。FIの歩み', category: '代表ストーリー' },
   { topic: '「完璧じゃなくていい、動かせ」FIの開発哲学', category: '開発文化' },
   { topic: 'AIメディアを3日で立ち上げる — FIのスピード感の秘密', category: '実績・事例' },
@@ -45,28 +45,43 @@ export async function GET(req: NextRequest) {
   const slug = toSlug(cfg.topic);
   const today = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split('T')[0];
 
+  // persona.md を satotaku-agent から取得
+  let personaContext = '';
+  try {
+    const personaRes = await fetch(
+      'https://api.github.com/repos/dev-futuristicimagination/satotaku-agent/contents/persona.md',
+      { headers: { Authorization: `Bearer ${githubToken}`, Accept: 'application/vnd.github+json' } }
+    );
+    if (personaRes.ok) {
+      const personaData = await personaRes.json() as { content: string };
+      const raw = Buffer.from(personaData.content, 'base64').toString('utf8');
+      personaContext = `\n\n【佐藤琢也のペルソナ情報（このトーン・価値観で書く）】\n${raw.slice(0, 1500)}`;
+    }
+  } catch { /* persona取得失敗時はデフォルトで続行 */ }
+
   // Generate
   const genAI = new GoogleGenerativeAI(geminiKey);
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-  const prompt = `あなたはFuturistic Imagination（futuristicimagination.co.jp）の広報担当です。
-採用候補者に「この会社で働いてみたい」と思わせる採用ブログ記事を書いてください。
+  const prompt = `あなたはFuturistic Imagination 代表・佐藤琢也として採用ブログ記事を書きます。
+採用候補者に「この会社で働いてみたい」と思わせる記事を、本人の言葉で書いてください。${personaContext}
 
 【トピック】${cfg.topic}
 【カテゴリ】${cfg.category}
-【会社情報】
+【会社基本情報】
 - 社名: Futuristic Imagination LLC
-- 代表: 佐藤卓也（元SES→AI起業）
+- 代表: 佐藤琢也（元SES→AI起業）
 - 事業: AIオウンドメディア構築・Gemini APIパイプライン開発受託
 - 特徴: バイブコーディング・フルリモート・1人で11サイト自動運営
 
 【文章スタイル】
-- 一人称で、等身大に書く（「私たちは〜」よりも「正直に言うと〜」スタイル）
-- 大手っぽい建前は一切不要。本音ベースで
-- 採用担当者が書いたのではなく、代表やエンジニアが書いた雰囲気
+- 一人称「私」で、等身大に書く
+- 「正直に言うと〜」「実は〜」スタイルで本音ベース
+- 大手企業の採用ブログっぽい建前は一切不要
+- 上のペルソナ情報に基づいた口調・価値観で書く
 
 【構成】2,000〜2,500文字
-- 共感できる書き出し（問いかけ・エピソード）
+- 共感できる書き出し（問いかけ・具体的なエピソード）
 - H2×3〜4本の本文
 - まとめ（カジュアル面談への誘い）
 
