@@ -4,7 +4,7 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 
 const REPO = 'dev-futuristicimagination/fi-recruit-blog';
-const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/master/content/articles`;
+const GITHUB_API = `https://api.github.com/repos/${REPO}/contents/content/articles`;
 
 interface Article {
   slug: string;
@@ -17,9 +17,7 @@ interface Article {
 }
 
 function parseMarkdown(raw: string, slug: string): Article | null {
-  // BOMを除去
   const text = raw.replace(/^\uFEFF/, '');
-  // frontmatter を抽出
   const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
   if (!m) return null;
   const [, fm, body] = m;
@@ -59,6 +57,30 @@ function renderMarkdown(md: string): string {
     .join('\n');
 }
 
+async function fetchArticle(slug: string): Promise<Article | null> {
+  try {
+    const token = process.env.GITHUB_TOKEN;
+    const filename = encodeURIComponent(decodeURIComponent(slug)) + '.md';
+    const url = `${GITHUB_API}/${filename}`;
+    const res = await fetch(url, {
+      cache: 'no-store',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github.raw+json',
+      },
+    });
+    if (!res.ok) {
+      console.error(`[fetchArticle] GitHub API ${res.status} for slug: ${slug}`);
+      return null;
+    }
+    const raw = await res.text();
+    return parseMarkdown(raw, slug);
+  } catch (e) {
+    console.error(`[fetchArticle] Error:`, e);
+    return null;
+  }
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const article = await fetchArticle(slug);
@@ -66,29 +88,23 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return { title: article.title, description: article.excerpt };
 }
 
-async function fetchArticle(slug: string): Promise<Article | null> {
-  try {
-    const token = process.env.GITHUB_TOKEN;
-    const apiUrl = `https://api.github.com/repos/${REPO}/contents/content/articles/${encodeURIComponent(slug)}.md`;
-    const res = await fetch(apiUrl, {
-      cache: 'no-store',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/vnd.github.raw+json',
-      },
-    });
-    if (!res.ok) return null;
-    const raw = await res.text();
-    return parseMarkdown(raw, slug);
-  } catch {
-    return null;
-  }
-}
-
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  console.log(`[ArticlePage] slug="${slug}" len=${slug.length}`);
+
   const article = await fetchArticle(slug);
-  if (!article) notFound();
+
+  if (!article) {
+    // デバッグ: 404の代わりに情報を表示（本番は notFound() に戻す）
+    return (
+      <div style={{ padding: 40, fontFamily: 'monospace' }}>
+        <h2>Article not found (debug)</h2>
+        <p>slug: {slug}</p>
+        <p>slug length: {slug.length}</p>
+        <p>encoded: {encodeURIComponent(slug)}</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -101,20 +117,19 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
       </div>
 
       <article className="article-page">
-        <span className="card-tag">{article!.category}</span>
-        <h1>{article!.title}</h1>
+        <span className="card-tag">{article.category}</span>
+        <h1>{article.title}</h1>
         <div className="article-meta">
-          <span>{article!.publishedAt}</span>
+          <span>{article.publishedAt}</span>
           <span>·</span>
-          <span>{article!.readingTime}分で読める</span>
+          <span>{article.readingTime}分で読める</span>
           <span>·</span>
           <span>AI自動生成</span>
         </div>
         <div
           className="article-body"
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(article!.content) }}
+          dangerouslySetInnerHTML={{ __html: renderMarkdown(article.content) }}
         />
-
         <div style={{ marginTop: 64, padding: 36, background: 'var(--bg3)', borderRadius: 12, border: '1px solid var(--border)', textAlign: 'center' }}>
           <p style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 8 }}>この記事を読んで、気になりましたか？</p>
           <p style={{ color: 'var(--text-muted)', marginBottom: 20, fontSize: '0.9rem' }}>まずはカジュアルに話しましょう。選考なし・30分。</p>
