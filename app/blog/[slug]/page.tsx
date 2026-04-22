@@ -69,10 +69,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 async function fetchArticle(slug: string): Promise<Article | null> {
   try {
     const token = process.env.GITHUB_TOKEN;
-    const url = `${RAW_BASE}/${encodeURIComponent(slug)}.md`;
-    const res = await fetch(url, {
+    const apiUrl = `https://api.github.com/repos/${REPO}/contents/content/articles/${encodeURIComponent(slug)}.md`;
+    const res = await fetch(apiUrl, {
       cache: 'no-store',
-      headers: token ? { Authorization: `token ${token}` } : {},
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github.raw+json',
+      },
     });
     if (!res.ok) return null;
     const raw = await res.text();
