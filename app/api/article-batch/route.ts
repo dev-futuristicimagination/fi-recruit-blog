@@ -21,12 +21,12 @@ async function getExistingSlugs(token: string): Promise<Set<string>> {
 
 export async function POST(req: NextRequest) {
   // 簡易トークン認証（本番では削除）
-  const body = await req.json() as { topic: string; category: string; token?: string };
-  if (body.token !== 'bulk2025') {
+  const reqBody = await req.json() as { topic: string; category: string; token?: string };
+  if (reqBody.token !== 'bulk2025') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { topic, category } = body;
+  const { topic, category } = reqBody;
   if (!topic || !category) return NextResponse.json({ error: 'topic and category required' }, { status: 400 });
 
   const geminiKey = process.env.GEMINI_API_KEY;
@@ -98,10 +98,10 @@ EXCERPT: {100〜120文字の概要文}
     else if (lines[i].startsWith('EXCERPT:')) { excerpt = lines[i].replace('EXCERPT:', '').trim(); bodyStart = i + 1; }
   }
 
-  const body = lines.slice(bodyStart).join('\n').trim();
-  if (!excerpt) excerpt = body.replace(/^#+.+\n/gm, '').trim().slice(0, 120).replace(/\n/g, ' ');
+  const articleBody = lines.slice(bodyStart).join('\n').trim();
+  if (!excerpt) excerpt = articleBody.replace(/^#+.+\n/gm, '').trim().slice(0, 120).replace(/\n/g, ' ');
 
-  const content = `---\nslug: "${slug}"\ntitle: "${title}"\nexcerpt: "${excerpt}"\ncategory: "${category}"\npublishedAt: "${today}"\n---\n\n${body}`;
+  const content = `---\nslug: "${slug}"\ntitle: "${title}"\nexcerpt: "${excerpt}"\ncategory: "${category}"\npublishedAt: "${today}"\n---\n\n${articleBody}`;
 
   const saveRes = await fetch(
     `https://api.github.com/repos/dev-futuristicimagination/fi-recruit-blog/contents/content/articles/${encodeURIComponent(`${slug}.md`)}`,

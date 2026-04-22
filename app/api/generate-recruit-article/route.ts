@@ -200,8 +200,8 @@ EXCERPT: {100〜120文字の概要}
 
   // ─── GitHub に保存 ─────────────────────────────────────────────
   const filename = `${slug}.md`;
-  const url = `https://api.github.com/repos/dev-futuristicimagination/fi-recruit-blog/contents/content/articles/${filename}`;
-  const saveRes = await fetch(url, {
+  const githubUrl = `https://api.github.com/repos/dev-futuristicimagination/fi-recruit-blog/contents/content/articles/${filename}`;
+  const saveRes = await fetch(githubUrl, {
     method: 'PUT',
     headers: { Authorization: `Bearer ${githubToken}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
     body: JSON.stringify({
