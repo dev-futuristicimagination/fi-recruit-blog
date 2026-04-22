@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/generate-recruit-article",
-      "schedule": "0 1 * * 2"
+      "schedule": "0 1 * * *"
     }
   ]
 }
