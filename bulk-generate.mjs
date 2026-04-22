@@ -1,9 +1,8 @@
-// 採用ブログ 一括記事生成スクリプト
+// 採用ブログ 一括記事生成スクリプト v2 - 固定トピックリスト方式
 // 使用方法: node bulk-generate.mjs
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -12,18 +11,21 @@ function loadEnv() {
   const envPath = path.join(__dirname, '.env.local');
   const lines = fs.readFileSync(envPath, 'utf8').split('\n');
   for (const line of lines) {
-    const m = line.match(/^([A-Z_]+)=(.+)$/);
+    const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.+)$/);
     if (m) process.env[m[1]] = m[2].trim();
   }
 }
 loadEnv();
 
-const GEMINI_KEY = process.env.GEMINI_API_KEY;
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const GEMINI_KEY = process.env.GEMINI_API_KEY;
 const REPO = 'dev-futuristicimagination/fi-recruit-blog';
 
-// ─── 生成対象トピック（24記事）───────────────────────────────────
-const TARGETS = [
+if (!GITHUB_TOKEN) { console.error('GITHUB_TOKEN not set'); process.exit(1); }
+if (!GEMINI_KEY) { console.error('GEMINI_API_KEY not set'); process.exit(1); }
+
+// ─── 正規トピックリスト（固定順序）────────────────────────────
+const TOPICS = [
   { topic: 'SESからAIスタートアップへ。佐藤琢也の起業ストーリー', category: '代表ストーリー' },
   { topic: 'なぜ「AIオウンドメディア自動化」に賭けたのか。FIの原点', category: '代表ストーリー' },
   { topic: '「自動化への執念」が私の核心。佐藤琢也の価値観と哲学', category: '代表ストーリー' },
@@ -64,42 +66,61 @@ async function getExistingSlugs() {
   return new Set(files.map(f => f.name.replace('.md', '')));
 }
 
+async function callGemini(prompt) {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.8, maxOutputTokens: 4096 }
+      })
+    }
+  );
+  if (!res.ok) throw new Error(`Gemini error: ${res.status} ${await res.text()}`);
+  const data = await res.json();
+  return data.candidates[0].content.parts[0].text.trim();
+}
+
 async function generateAndSave(topic, category, personaText, existingSlugs) {
   const slug = toSlug(topic);
   if (existingSlugs.has(slug)) {
-    console.log(`⏭ SKIP (already exists): ${slug}`);
+    console.log(`⏭ SKIP: ${topic.slice(0, 40)}`);
     return false;
   }
 
   const today = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split('T')[0];
-  const genAI = new GoogleGenerativeAI(GEMINI_KEY);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const prompt = `あなたはFuturistic Imagination 代表・佐藤琢也として採用ブログ記事を書きます。
 
-【ペルソナ】
+【ペルソナ・価値観】
 ${personaText}
 
-【トピック】${topic}
+【今日書く記事のトピック】
+${topic}
+
 【カテゴリ】${category}
+
 【会社基本情報】
 - 社名: Futuristic Imagination LLC（代表: 佐藤琢也）
-- 事業: AIオウンドメディア構築・Gemini APIパイプライン開発
-- 特徴: バイブコーディング・フルリモート・1人で11サイト自動運営
+- 元SES出身、AI自動化オタク、フルリモート・フルフレックス推進者
+- 事業: AIオウンドメディア自動運営（11サイト）・Gemini APIパイプライン開発
+- 特徴: バイブコーディング・週6時間以上コードを書く代表
 
-【スタイル】
+【文章スタイル（必ず守ること）】
 - 一人称「私」で等身大に書く
 - 「正直に言うと〜」「実は〜」スタイルで本音ベース
-- 大手採用ブログの建前は不要
-- 採用候補者が「この人と働きたい」と感じる温度感
+- 大手採用ブログっぽい建前・きれいごとは一切不要
+- 読んだ人が「この人と働きたい」と感じる温度感
+- AIっぽい箇条書き連発・強調（**）は禁止
 
-【出力形式】（コードブロック不要）
+【出力形式】（コードブロック不要、以下の順序で出力）
 TITLE: {40〜60文字のタイトル}
-EXCERPT: {100〜120文字の概要}
+EXCERPT: {100〜120文字の概要文}
 {2000〜2500文字の記事本文。見出しH2(##)を3〜4本}`;
 
-  const result = await model.generateContent(prompt);
-  const rawText = result.response.text().trim()
+  const rawText = (await callGemini(prompt))
     .replace(/^```(?:markdown)?\n?/, '').replace(/\n?```$/, '');
 
   const lines = rawText.split('\n');
@@ -107,7 +128,7 @@ EXCERPT: {100〜120文字の概要}
   let excerpt = '';
   let bodyStart = 0;
 
-  for (let i = 0; i < Math.min(5, lines.length); i++) {
+  for (let i = 0; i < Math.min(6, lines.length); i++) {
     if (lines[i].startsWith('TITLE:')) { title = lines[i].replace('TITLE:', '').trim(); bodyStart = i + 1; }
     else if (lines[i].startsWith('EXCERPT:')) { excerpt = lines[i].replace('EXCERPT:', '').trim(); bodyStart = i + 1; }
   }
@@ -118,63 +139,56 @@ EXCERPT: {100〜120文字の概要}
   const content = `---\nslug: "${slug}"\ntitle: "${title}"\nexcerpt: "${excerpt}"\ncategory: "${category}"\npublishedAt: "${today}"\n---\n\n${body}`;
 
   const filename = `${slug}.md`;
-  const url = `https://api.github.com/repos/${REPO}/contents/content/articles/${encodeURIComponent(filename)}`;
-  const saveRes = await fetch(url, {
-    method: 'PUT',
-    headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      message: `feat: add recruit article "${slug}"`,
-      content: Buffer.from(content).toString('base64'),
-      committer: { name: 'FI Recruit Bot', email: 'ta-sato@futuristicimagination.co.jp' },
-    }),
-  });
+  const putRes = await fetch(
+    `https://api.github.com/repos/${REPO}/contents/content/articles/${encodeURIComponent(filename)}`,
+    {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: `feat: add recruit article "${slug}"`,
+        content: Buffer.from(content).toString('base64'),
+        committer: { name: 'FI Recruit Bot', email: 'ta-sato@futuristicimagination.co.jp' },
+      }),
+    }
+  );
 
-  if (!saveRes.ok) {
-    const err = await saveRes.text();
-    console.error(`❌ GitHub save failed for ${slug}: ${saveRes.status} - ${err.slice(0, 100)}`);
+  if (!putRes.ok) {
+    console.error(`❌ GitHub save failed: ${putRes.status} - ${(await putRes.text()).slice(0, 150)}`);
     return false;
   }
 
-  existingSlugs.add(slug); // ローカルセットに追加して次回重複回避
-  console.log(`✅ Created: ${title}`);
+  existingSlugs.add(slug);
+  console.log(`✅ [${category}] ${title}`);
   return true;
 }
 
 async function main() {
-  console.log('🚀 FI採用ブログ 一括生成開始');
-  
+  console.log('🚀 FI採用ブログ 一括生成 v2 開始\n');
+
   const personaText = fs.readFileSync(
     path.join(__dirname, '..', 'satotaku-agent', 'persona.md'), 'utf8'
-  ).slice(0, 1500);
+  ).slice(0, 1200);
 
   const existingSlugs = await getExistingSlugs();
-  console.log(`📚 既存記事数: ${existingSlugs.size}`);
+  console.log(`📚 既存記事数: ${existingSlugs.size}\n`);
 
   let created = 0;
   let skipped = 0;
+  let failed = 0;
 
-  for (const { topic, category } of TARGETS) {
+  for (const { topic, category } of TOPICS) {
     try {
       const ok = await generateAndSave(topic, category, personaText, existingSlugs);
-      if (ok) {
-        created++;
-        await new Promise(r => setTimeout(r, 5000)); // GitHub API rate limit対策
-      } else {
-        skipped++;
-      }
+      if (ok) { created++; await new Promise(r => setTimeout(r, 6000)); }
+      else skipped++;
     } catch (e) {
-      console.error(`❌ Error for "${topic}": ${e.message}`);
+      console.error(`❌ Error for "${topic.slice(0, 30)}": ${e.message.slice(0, 100)}`);
+      failed++;
+      await new Promise(r => setTimeout(r, 3000));
     }
   }
 
-  console.log(`\n🎉 完了: ${created}記事生成 / ${skipped}記事スキップ`);
-  
-  // Deploy Hook
-  const hook = process.env.VERCEL_DEPLOY_HOOK;
-  if (hook && created > 0) {
-    await fetch(hook, { method: 'POST' });
-    console.log('🚀 Vercel Deploy Hook 発火');
-  }
+  console.log(`\n🎉 完了: 生成${created} / スキップ${skipped} / 失敗${failed}`);
 }
 
 main().catch(console.error);
