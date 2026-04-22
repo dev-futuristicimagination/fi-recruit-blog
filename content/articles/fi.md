@@ -1,8 +1,8 @@
----
+﻿---
 slug: "fi"
 title: "「実証主義」を貫くFuturistic Imaginationが求める、本物の情熱と偏屈さ"
 excerpt: "Futuristic Imagination代表の佐藤琢也が、採用ブログではなかなか語られない「本音」で、私たちが本当に求める人材像をお話しします。理論より実装、自動化への執着、そして何よりも「自分の手で確かめる」情熱を持つ方との出会いを期待しています。"
-category: "????"
+category: "カルチャー"
 publishedAt: "2026-04-22"
 ---
 

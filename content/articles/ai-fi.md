@@ -1,8 +1,8 @@
----
+﻿---
 slug: "ai-fi"
 title: "AIは仕事を奪うのか？ Futuristic Imaginationが描く「未来を創る働き方」"
 excerpt: "Futuristic Imagination 代表の佐藤琢也が、AIが働き方をどう変えるか、そして私たちが目指す未来の働き方を本音で語ります。AIを脅威ではなく「人生を豊かにするツール」と捉え、効率と自動化を追求する当社の真髄に迫ります。"
-category: "???????"
+category: "成長・キャリア"
 publishedAt: "2026-04-22"
 ---
 

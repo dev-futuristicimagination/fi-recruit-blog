@@ -2,7 +2,7 @@
 slug: "vercel-cron"
 title: "【社長の本音】Vercel Cronが「1人11サイト」を可能にした自動化の舞台裏"
 excerpt: "Futuristic Imagination代表の佐藤琢也です。今回は、私がなぜこれほどまでに自動化にこだわるのか、そしてVercel Cronが私たちのビジネスにおいてどんな役割を果たしているのかを、飾らない言葉でご紹介します。未来の仲間へ、私たちのリアルな働き方と思想をお届けします。"
-category: "?????"
+category: "技術ブログ"
 publishedAt: "2026-04-22"
 ---
 

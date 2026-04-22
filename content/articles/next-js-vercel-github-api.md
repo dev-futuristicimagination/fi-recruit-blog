@@ -2,7 +2,7 @@
 slug: "next-js-vercel-github-api"
 title: "Next.js + Vercel + GitHub APIで拓く、未来の自動化開発。僕らが求めるのは「動かす」ことに熱狂する君だ"
 excerpt: "Futuristic Imagination代表の佐藤琢也です。大手採用ブログのような綺麗事は一切抜きで、僕たちのリアルな開発現場をお話しします。Next.js、Vercel、GitHub APIを駆使して、11サイトを1人で自動運営する。この挑戦を「面白い」と感じ、共に実践してくれる仲間を探しています。技術を使って「不可能」を「可能」に変える、そんな情熱を持つあなたと出会いたいです。"
-category: "?????"
+category: "技術ブログ"
 publishedAt: "2026-04-22"
 ---
 

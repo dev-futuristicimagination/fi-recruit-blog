@@ -1,8 +1,8 @@
----
+﻿---
 slug: "ai-ai"
 title: "AI時代にエンジニアが"サボる"べきこと。Futuristic Imaginationが求める「人間らしい」働き方"
 excerpt: "AIと自動化が急速に進む現代で、エンジニアは本当に何に時間を使うべきなのでしょうか？ Futuric Imaginationが目指す「手動ゼロ」の開発と、フルリモート・フルフレックスで実現する新しい働き方について、代表の佐藤琢也が本音でお話しします。"
-category: "???????"
+category: "成長・キャリア"
 publishedAt: "2026-04-22"
 ---
 

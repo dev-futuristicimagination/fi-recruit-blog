@@ -2,7 +2,7 @@
 slug: "ses-ai"
 title: "SES出身の私がAI自動化で描く未来：本当に「AIに使われる」のか？"
 excerpt: "元SESの私が、なぜ一人で11サイトを自動運用する「AI自動化オタク」になったのか。世間で囁かれる「AIが仕事を奪う」という不安に、最前線の実情から本音で向き合います。Futuristic Imaginationが求める、未来を共に創る仲間とは。"
-category: "???????"
+category: "代表ストーリー"
 publishedAt: "2026-04-22"
 ---
 

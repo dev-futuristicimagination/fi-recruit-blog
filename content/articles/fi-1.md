@@ -1,8 +1,8 @@
----
+﻿---
 slug: "fi-1"
 title: "建前なし。Futuristic Imaginationが求めるのは「自動化を信じ、自ら手を動かす」エンジニア"
 excerpt: "Futuristic Imagination代表の佐藤琢也です。大手採用ブログのきれいごとは抜きに、私がなぜ一人で11サイトも運営できるのか、そしてFIがどんなエンジニアを求めているのか、本音で語ります。自動化への執着と、泥臭い実装に情熱を燃やせる方へ。"
-category: "????"
+category: "採用基準"
 publishedAt: "2026-04-22"
 ---
 

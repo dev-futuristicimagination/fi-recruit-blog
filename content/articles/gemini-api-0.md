@@ -2,7 +2,7 @@
 slug: "gemini-api-0"
 title: "Gemini APIが変えたエンジニアの働き方：Futuristic Imagination代表が語る、一人で11サイトを動かす自動化の真実"
 excerpt: "Futuristic Imagination代表の佐藤琢也が、Gemini APIを駆使して実現した「1人11サイト運営」の裏側を公開。非効率を徹底的に排除し、未来を実装する私たちの開発スタイルと、共に歩む新たな仲間への正直な想いを語ります。"
-category: "?????"
+category: "技術ブログ"
 publishedAt: "2026-04-22"
 ---
 

@@ -2,7 +2,7 @@
 slug: "6-fi"
 title: "週6時間コードを書き続ける代表が、Futuristic Imaginationを創業した理由"
 excerpt: "Futuristc Imagination代表の佐藤琢也です。私がなぜ今も週に6時間以上コードを書き続け、この会社を立ち上げたのか。SES時代のモヤモヤからAI自動化への確信、そして「自分で動かす」という実証主義にこだわる当社の原点を、建前なしでお話しします。"
-category: "?????"
+category: "カルチャー"
 publishedAt: "2026-04-22"
 ---
 
