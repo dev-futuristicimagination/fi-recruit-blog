@@ -2,8 +2,7 @@ import { getArticleBySlug, getAllArticles } from '@/lib/articles';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
-export const dynamicParams = true;
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
 
 export async function generateStaticParams() {
   const articles = await getAllArticles();
