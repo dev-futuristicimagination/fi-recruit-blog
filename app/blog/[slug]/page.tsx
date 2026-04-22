@@ -68,8 +68,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 async function fetchArticle(slug: string): Promise<Article | null> {
   try {
+    const token = process.env.GITHUB_TOKEN;
     const url = `${RAW_BASE}/${encodeURIComponent(slug)}.md`;
-    const res = await fetch(url, { cache: 'no-store' });
+    const res = await fetch(url, {
+      cache: 'no-store',
+      headers: token ? { Authorization: `token ${token}` } : {},
+    });
     if (!res.ok) return null;
     const raw = await res.text();
     return parseMarkdown(raw, slug);
