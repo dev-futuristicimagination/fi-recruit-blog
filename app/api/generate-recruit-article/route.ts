@@ -231,7 +231,7 @@ EXCERPT: {100〜120文字の概要}
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         embeds: [{ title: '✅ FI採用ブログ 記事生成完了', color: 0x6366f1,
-          description: `**${title}**`,
+          description: `**${title}**\nhttps://recruit.futuristicimagination.co.jp/blog/${slug}`,
           fields: [
             { name: 'カテゴリ', value: cfg.category, inline: true },
             { name: 'ソース', value: (cfg as { source?: string }).source === 'activity' ? '📋 活動ログから' : '📋 固定リストから', inline: true },
