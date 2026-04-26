@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
 
   // ─── persona + session_log を取得 ────────────────────────────
   let personaText = '';
-  let sessionLogText = '';
+  let recentEpisodes = ''; // 直近の体験・感情を抽出したもの
 
   try {
     const personaRes = await fetch(
@@ -82,7 +82,8 @@ export async function GET(req: NextRequest) {
     );
     if (personaRes.ok) {
       const d = await personaRes.json() as { content: string };
-      personaText = Buffer.from(d.content, 'base64').toString('utf8').slice(0, 1500);
+      // persona.md は全文使用（人格・価値観の根幹）
+      personaText = Buffer.from(d.content, 'base64').toString('utf8').slice(0, 2000);
     }
   } catch { /* 取得失敗時はスキップ */ }
 
@@ -93,34 +94,18 @@ export async function GET(req: NextRequest) {
     );
     if (logRes.ok) {
       const d = await logRes.json() as { content: string };
-      sessionLogText = Buffer.from(d.content, 'base64').toString('utf8').slice(0, 2000);
+      const fullLog = Buffer.from(d.content, 'base64').toString('utf8');
+      // 直近の ✅ セクション（## ✅ で始まる最新3件）だけを抽出する
+      // → 技術的な詳細より「何をやって・何を感じたか」が採用記事のネタになる
+      const sections = fullLog.split(/(?=## ✅)/);
+      const recent = sections.slice(1, 4); // 最新3セクション（先頭はヘッダー）
+      recentEpisodes = recent.join('\n').slice(0, 3000);
     }
   } catch { /* 取得失敗時はスキップ */ }
 
   // ─── Geminiでトピック選定 ─────────────────────────────────────
   const genAI = new GoogleGenerativeAI(geminiKey);
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-  const unusedList = unused.map((t, i) => `${i + 1}. [${t.category}] ${t.topic}`).join('\n');
-  const categoryCount = getCategoryCount(existingSlugs);
-
-  const topicPrompt = `あなたはFuturistic Imagination（FI）の採用ブログ編集長です。
-
-【今日の日付】${today}
-【最近の佐藤琢也の活動ログ】
-${sessionLogText || '（取得できませんでした）'}
-
-【未投稿のトピック候補】
-${unusedList || '（すべて投稿済み）'}
-
-【各カテゴリの投稿数】
-${JSON.stringify(categoryCount)}
-
-以下のルールで「今日書く記事のトピックとカテゴリ」を1つ選んでください：
-1. 活動ログに採用ブログとして書けるネタがあれば、それを優先してオリジナルトピックを作る
-2. ない場合は未投稿候補から投稿数の少ないカテゴリを優先して選ぶ
-3. 出力は必ず以下のJSON形式のみ（他のテキスト不要）:
-{"topic": "...", "category": "...", "source": "activity"|"list"}`;
 
   let cfg: { topic: string; category: string; source?: string } =
     unused.length > 0 ? unused[Math.floor(Math.random() * unused.length)] : TOPICS[0];
@@ -129,22 +114,33 @@ ${JSON.stringify(categoryCount)}
   if (forcedTopic && forcedCategory) {
     cfg = { topic: forcedTopic, category: forcedCategory, source: 'forced' };
   } else {
-    // ─── Geminiでトピック選定 ───────────────────────────────────
-    const genAI = new GoogleGenerativeAI(geminiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const unusedList = unused.map((t, i) => `${i + 1}. [${t.category}] ${t.topic}`).join('\n');
     const categoryCount = getCategoryCount(existingSlugs);
+    // 活動ログを強く優先するトピック選定プロンプト
     const topicPrompt = `あなたはFuturistic Imagination（FI）の採用ブログ編集長です。
 【今日の日付】${today}
-【最近の佐藤琢也の活動ログ】${sessionLogText || '（取得できませんでした）'}
-【未投稿のトピック候補】${unusedList || '（すべて投稿済み）'}
+
+【佐藤琢也の直近の実体験（最優先で参照すること）】
+${recentEpisodes || '（取得できませんでした）'}
+
+【未投稿のトピック候補（実体験がなければここから選ぶ）】
+${unusedList || '（すべて投稿済み）'}
+
 【各カテゴリの投稿数】${JSON.stringify(categoryCount)}
-ルール: 未投稿候補から投稿数の少ないカテゴリを優先して選ぶ（活動ログは参考程度）。
-出力は必ず以下のJSON形式のみ: {"topic": "...", "category": "...", "source": "list"}`;
+
+選定ルール（優先順位順）:
+1. 直近の実体験に「採用ブログのネタになる学び・失敗・意思決定・感情」があれば、
+   それをベースにオリジナルトピックを作る（sourceは"activity"）
+   例: バグを直した体験 → 「スタートアップ開発の泥臭さ」記事のネタ
+   例: 新しいサービス構築 → 「0→1を1人でやる」記事のネタ
+2. 実体験のネタがなければ、投稿数の少ないカテゴリの未投稿候補を選ぶ（sourceは"list"）
+
+出力は必ず以下のJSON形式のみ（他のテキスト不要）:
+{"topic": "...", "category": "...", "source": "activity"|"list", "episode_hint": "記事の核になる具体的エピソード1〜2文"}`,
     try {
       const topicResult = await model.generateContent(topicPrompt);
       const raw = topicResult.response.text().trim().replace(/^```json\n?/, '').replace(/\n?```$/, '');
-      const parsed = JSON.parse(raw) as { topic: string; category: string; source: string };
+      const parsed = JSON.parse(raw) as { topic: string; category: string; source: string; episode_hint?: string };
       if (parsed.topic && parsed.category) cfg = parsed;
     } catch { /* パース失敗時はデフォルト維持 */ }
   }
@@ -156,29 +152,55 @@ ${JSON.stringify(categoryCount)}
     return NextResponse.json({ message: `Already exists: ${slug}` });
   }
 
+  // episode_hint が返ってきた場合はarticlePromptに組み込む
+  const episodeHint = (cfg as { episode_hint?: string }).episode_hint || '';
+
+  // 文末バリエーション：記事ごとに異なるパターンをランダム選択
+  const endingPatterns = [
+    'A. 体言止めで余韻を残す（例：「それが、FIの答えだ。」）',
+    'B. 読者への問いかけで終わる（例：「あなたは今、どんな非効率に苛立っているだろうか？」）',
+    'C. 具体的な数字・事実で締める（例：「今日も自動で3本の記事が生まれた。私は眠っていた。」）',
+    'D. 逆説・意外な結論で終わる（例：「AIを使い倒しているこの会社が、最も人間らしい働き方をしている。」）',
+    'E. 短い一文で断言して終わる（例：「自動化は手段じゃない。哲学だ。」）',
+  ];
+  const selectedEnding = endingPatterns[Math.floor(Math.random() * endingPatterns.length)];
+
   // ─── 記事生成 ─────────────────────────────────────────────────
   const articlePrompt = `あなたはFuturistic Imagination 代表・佐藤琢也として採用ブログ記事を書きます。
-採用候補者に「この会社で働いてみたい」と思わせる記事を、本人の言葉で書いてください。
+採用候補者に「この会社で働いてみたい」と思わせる、読み応えのある一人称の記事を書いてください。
 
-【ペルソナ（このトーン・価値観で書く）】
+【佐藤琢也のペルソナ・価値観（必ずこのトーンで書く）】
 ${personaText || '元SES出身、AI自動化オタク、本音ベースで語る、フルリモート・フルフレックス推進者'}
 
 【今日のトピック】${cfg.topic}
 【カテゴリ】${cfg.category}
+${episodeHint ? `【記事の核にすべき実体験】\n${episodeHint}\n※ この体験を記事の軸に据えること。抽象論より「この日、何が起きたか」を具体的に描写する。` : ''}
+
 【会社基本情報】
 - 社名: Futuristic Imagination LLC
 - 代表: 佐藤琢也（元SES→AI起業）
 - 事業: AIオウンドメディア構築・Gemini APIパイプライン開発受託
-- 特徴: バイブコーディング・フルリモート・1人で11サイト自動運営
+- 特徴: バイブコーディング・フルリモート・1人で11サイト自動運営・累計1,500本以上生成
 
 【文章スタイル】
 - 一人称「私」で、等身大に書く
-- 「正直に言うと〜」「実は〜」スタイルで本音ベース
-- 大手採用ブログっぽい建前は一切不要
-- 読んだ人が「この人と働きたい」と感じる温度感
+- 大手採用ブログっぽい建前・お世辞は一切不要
+- 読んだ人が「この人と働きたい」と感じる体温のある文章
+- 具体的な固有名詞・数字・出来事を入れる（抽象的な話は避ける）
+
+【絶対に使わない禁止パターン】
+- 「〜しませんか？」で文章を締める（特に記事末尾）
+- 「〜と思っています」「〜と感じています」を3回以上使う
+- 「正直に言うと」「実は」を同一記事内で2回以上使う
+- 「一緒に」「共に」を記事の締めに使う
+- 「未来を創る」「未来を想像する」などの抽象的スローガンで締める
+- 記事を「皆さん、こんにちは」で始める
+
+【この記事の締め方（必ず守ること）】
+${selectedEnding}
 
 【出力形式】（この順で出力、コードブロック不要）
-TITLE: {40〜60文字のタイトル}
+TITLE: {40〜60文字のタイトル。キャッチーで具体的に}
 EXCERPT: {100〜120文字の概要}
 {2000〜2500文字の記事本文。見出しはH2（##）を3〜4本}`;
 
@@ -199,7 +221,10 @@ EXCERPT: {100〜120文字の概要}
   const body = lines.slice(bodyStart).join('\n').trim();
   if (!excerpt) excerpt = body.replace(/^#+.+\n/gm, '').trim().slice(0, 120).replace(/\n/g, ' ');
 
-  const content = `---\nslug: "${slug}"\ntitle: "${title}"\nexcerpt: "${excerpt}"\ncategory: "${cfg.category}"\npublishedAt: "${today}"\n---\n\n${body}`;
+  // AI生成バッジ（透明性の明示 = FIブランドの一部）
+  const aiBadge = `> 🤖 この記事は **${today}** にFuturistic Imaginationの自動コンテンツパイプライン（Gemini 2.5 Flash）によって生成されました。\n\n`;
+
+  const content = `---\nslug: "${slug}"\ntitle: "${title}"\nexcerpt: "${excerpt}"\ncategory: "${cfg.category}"\npublishedAt: "${today}"\n---\n\n${aiBadge}${body}`;
 
   // ─── GitHub に保存 ─────────────────────────────────────────────
   const filename = `${slug}.md`;
