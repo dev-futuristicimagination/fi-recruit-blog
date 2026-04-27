@@ -136,7 +136,7 @@ ${unusedList || '（すべて投稿済み）'}
 2. 実体験のネタがなければ、投稿数の少ないカテゴリの未投稿候補を選ぶ（sourceは"list"）
 
 出力は必ず以下のJSON形式のみ（他のテキスト不要）:
-{"topic": "...", "category": "...", "source": "activity"|"list", "episode_hint": "記事の核になる具体的エピソード1〜2文"}`,
+{"topic": "...", "category": "...", "source": "activity or list", "episode_hint": "記事の核になる具体的エピソード1〜2文"}`;
     try {
       const topicResult = await model.generateContent(topicPrompt);
       const raw = topicResult.response.text().trim().replace(/^```json\n?/, '').replace(/\n?```$/, '');
@@ -145,12 +145,7 @@ ${unusedList || '（すべて投稿済み）'}
     } catch { /* パース失敗時はデフォルト維持 */ }
   }
 
-  const slug = toSlug(cfg.topic);
-
-  // 既に存在するslugならスキップ
-  if (existingSlugs.has(slug)) {
-    return NextResponse.json({ message: `Already exists: ${slug}` });
-  }
+  // slugの重複チェックは記事生成後のGeminiSlug確定後に実施（下部参照）
 
   // episode_hint が返ってきた場合はarticlePromptに組み込む
   const episodeHint = (cfg as { episode_hint?: string }).episode_hint || '';
@@ -223,6 +218,11 @@ EXCERPT: {100〜120文字の概要}
 
   // GeminiのSLUGが取得できなければtopicからフォールバック生成
   const slug = geminiSlug || toSlug(cfg.topic);
+
+  // 既に存在するslugならスキップ
+  if (existingSlugs.has(slug)) {
+    return NextResponse.json({ message: `Already exists: ${slug}` });
+  }
 
   const body = lines.slice(bodyStart).join('\n').trim();
   if (!excerpt) excerpt = body.replace(/^#+.+\n/gm, '').trim().slice(0, 120).replace(/\n/g, ' ');
