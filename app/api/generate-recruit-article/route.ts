@@ -272,6 +272,21 @@ EXCERPT: {100〜120文字の概要}
     }).catch(() => {});
   }
 
+  // LinkedIn 自動投稿（non-fatal）
+  // LINKEDIN_POST_URL = linkedin-auto-poster の /api/linkedin-post エンドポイントURL
+  const linkedinPostUrl = process.env.LINKEDIN_POST_URL;
+  if (linkedinPostUrl) {
+    try {
+      const articleUrl = `https://recruit.futuristicimagination.co.jp/blog/${slug}`;
+      const postText = `📝 新しい採用ブログ記事を公開しました。\n\n${title}\n\n${excerpt}\n\n→ ${articleUrl}\n\n#AI開発 #スタートアップ #採用 #Gemini #Next_js`;
+      await fetch(linkedinPostUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}` },
+        body: JSON.stringify({ customContent: postText, articleUrl }),
+      });
+    } catch { /* LinkedIn失敗でもCronは止めない */ }
+  }
+
   return NextResponse.json({ success: true, slug, title, category: cfg.category });
 }
 
