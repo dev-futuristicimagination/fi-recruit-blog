@@ -122,6 +122,42 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           className="article-body"
           dangerouslySetInnerHTML={{ __html: renderMarkdown(article.content) }}
         />
+
+        {/* SNS シェアボタン */}
+        <div style={{ margin: '40px 0 32px', padding: '20px 24px', background: 'var(--bg3)', borderRadius: 12, border: '1px solid var(--border)' }}>
+          <p style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 12 }}>💬 この記事をシェアする</p>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <a
+              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(article.title)}&url=${encodeURIComponent(`https://recruit.futuristicimagination.co.jp/blog/${article.slug}`)}&hashtags=FI採用,AI開発`}
+              target="_blank" rel="noopener noreferrer"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#000', color: '#fff', padding: '8px 16px', borderRadius: 9999, fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none' }}
+            >
+              𝕏 ポスト
+            </a>
+            <a
+              href={`https://line.me/R/msg/text/?${encodeURIComponent(article.title + '\n' + `https://recruit.futuristicimagination.co.jp/blog/${article.slug}`)}`}
+              target="_blank" rel="noopener noreferrer"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#06C755', color: '#fff', padding: '8px 16px', borderRadius: 9999, fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none' }}
+            >
+              💬 LINE
+            </a>
+            <a
+              href={`https://b.hatena.ne.jp/entry/s/recruit.futuristicimagination.co.jp/blog/${article.slug}`}
+              target="_blank" rel="noopener noreferrer"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#00A4DE', color: '#fff', padding: '8px 16px', borderRadius: 9999, fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none' }}
+            >
+              B! はてブ
+            </a>
+            <a
+              href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`https://recruit.futuristicimagination.co.jp/blog/${article.slug}`)}`}
+              target="_blank" rel="noopener noreferrer"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#1877F2', color: '#fff', padding: '8px 16px', borderRadius: 9999, fontWeight: 700, fontSize: '0.82rem', textDecoration: 'none' }}
+            >
+              f Facebook
+            </a>
+          </div>
+        </div>
+
         <div style={{ marginTop: 64, padding: 36, background: 'var(--bg3)', borderRadius: 12, border: '1px solid var(--border)', textAlign: 'center' }}>
           <p style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 8 }}>この記事を読んで、気になりましたか？</p>
           <p style={{ color: 'var(--text-muted)', marginBottom: 20, fontSize: '0.9rem' }}>まずはカジュアルに話しましょう。選考なし・30分。</p>
