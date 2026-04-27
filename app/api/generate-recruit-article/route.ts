@@ -201,6 +201,7 @@ ${selectedEnding}
 
 【出力形式】（この順で出力、コードブロック不要）
 TITLE: {40〜60文字のタイトル。キャッチーで具体的に}
+SLUG: {英語kebab-case必須。例: ai-media-automation-nextjs-gemini（英数字・ハイフンのみ、日本語厳禁）}
 EXCERPT: {100〜120文字の概要}
 {2000〜2500文字の記事本文。見出しはH2（##）を3〜4本}`;
 
@@ -210,13 +211,18 @@ EXCERPT: {100〜120文字の概要}
 
   const lines = rawText.split('\n');
   let title = cfg.topic.slice(0, 60);
+  let geminiSlug = '';
   let excerpt = '';
   let bodyStart = 0;
 
-  for (let i = 0; i < Math.min(5, lines.length); i++) {
+  for (let i = 0; i < Math.min(6, lines.length); i++) {
     if (lines[i].startsWith('TITLE:')) { title = lines[i].replace('TITLE:', '').trim(); bodyStart = i + 1; }
+    else if (lines[i].startsWith('SLUG:')) { geminiSlug = toSlug(lines[i].replace('SLUG:', '').trim()); bodyStart = i + 1; }
     else if (lines[i].startsWith('EXCERPT:')) { excerpt = lines[i].replace('EXCERPT:', '').trim(); bodyStart = i + 1; }
   }
+
+  // GeminiのSLUGが取得できなければtopicからフォールバック生成
+  const slug = geminiSlug || toSlug(cfg.topic);
 
   const body = lines.slice(bodyStart).join('\n').trim();
   if (!excerpt) excerpt = body.replace(/^#+.+\n/gm, '').trim().slice(0, 120).replace(/\n/g, ' ');
@@ -270,7 +276,14 @@ EXCERPT: {100〜120文字の概要}
 }
 
 function toSlug(text: string): string {
-  return text.toLowerCase().replace(/[^\w\u3040-\u9fff]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+  // 日本語・全角文字をすべて除外し、英数字・ハイフンのみのslugを生成
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, ' ')   // 英数字・スペース・ハイフン以外を除去（日本語も含む）
+    .replace(/\s+/g, '-')         // スペースをハイフンに変換
+    .replace(/-+/g, '-')          // 連続ハイフンを単一に
+    .replace(/^-+|-+$/g, '')      // 先頭・末尾のハイフンを除去
+    .slice(0, 60);
 }
 
 function getCategoryCount(slugs: Set<string>): Record<string, number> {
