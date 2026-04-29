@@ -7,6 +7,10 @@
     {
       "path": "/api/generate-recruit-article",
       "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/generate-dev-blog",
+      "schedule": "0 1 * * 4"
     }
   ]
 }
