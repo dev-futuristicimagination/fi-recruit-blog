@@ -19,6 +19,13 @@ const DEV_BLOG_TOPICS = [
   'Vercel Cron と Discord Webhook で作る運用監視ダッシュボード',
   '10言語同時展開の多言語メディア自動運用アーキテクチャ解説',
   'E-E-A-T対応の著者バイオ自動挿入で全記事品質を底上げした話',
+  'Jules × Antigravity でゼロ手動の自律AI運用システムを構築した話',
+  'GitHub Actions + Playwright で Note.com への完全自動投稿を実現した設計',
+  'Buffer GraphQL API でメディア横断SNS自動投稿パイプラインを作った話',
+  'Gemini 2.5 Flash でSEO記事生成コストを月額$5以下に抑える設計思想',
+  'GA4 Analytics Admin API + Gemini で自動SEO最適化ループを実装した話',
+  'Vercel Shared ENV + GitHub Secrets で11リポジトリを一元管理する運用術',
+  'YouTube Data API v3 + OAuth2 でShortsを完全自動アップロードした実装記録',
 ];
 
 export async function GET(req: Request) {
