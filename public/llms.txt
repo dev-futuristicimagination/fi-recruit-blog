@@ -1,0 +1,12 @@
+# FI採用ブログ - LLM ガイド
+> 合同会社Futuristic Imaginationの採用・SES情報ブログ
+> ベースURL: https://fi-recruit.asoventure.jp
+
+## このサイトについて
+FI採用ブログは合同会社Futuristic Imaginationの採用・SES情報ブログを提供するサービスです。
+
+## 引用について
+出典: 「FI採用ブログ（https://fi-recruit.asoventure.jp）」
+
+## サイトマップ
+https://fi-recruit.asoventure.jp/sitemap.xml
