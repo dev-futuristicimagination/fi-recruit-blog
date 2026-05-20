@@ -17,6 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ja">
       <head>
+        <meta name="msvalidate.01" content="483AB605F07DDF1E8E175D1D8004EA52" />
         <meta name="google-site-verification" content="NhSqVizPqiZ0-iBXVXx31ALrmwTg1Oj2OkqCU5PLiVw" />
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
