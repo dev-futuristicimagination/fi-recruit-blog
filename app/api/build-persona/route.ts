@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
 
   // ── 2. Geminiでペルソナ抽出 ──────────────────────────────────────────
   const genAI = new GoogleGenerativeAI(geminiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
 
   const personaPrompt = `以下はFuturistic Imagination LLC 代表・佐藤琢也の実際の作業ログと会話サマリーです。
 これらを分析して、佐藤琢也という人物のペルソナプロファイルを作成してください。

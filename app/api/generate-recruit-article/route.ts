@@ -105,7 +105,7 @@ export async function GET(req: NextRequest) {
 
   // ─── Geminiでトピック選定 ─────────────────────────────────────
   const genAI = new GoogleGenerativeAI(geminiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
 
   let cfg: { topic: string; category: string; source?: string } =
     unused.length > 0 ? unused[Math.floor(Math.random() * unused.length)] : TOPICS[0];

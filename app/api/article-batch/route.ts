@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   } catch { /* fallback */ }
 
   const genAI = new GoogleGenerativeAI(geminiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
 
   const prompt = `あなたはFuturistic Imagination 代表・佐藤琢也として採用ブログ記事を書きます。
 
